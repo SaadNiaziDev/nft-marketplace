@@ -1,15 +1,68 @@
 import Navbar from "./Navbar";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { uploadFileToIPFS, uploadJSONToIPFS } from "../pinata";
 import Marketplace from '../Marketplace.json';
 import { useLocation } from "react-router";
+import { useAccount, useContractWrite, useWaitForTransaction } from "wagmi";
+import { CONTRACT_ABI, CONTRACT_ADDRESS } from "../config/constants"
+import { parseEther } from "ethers/lib/utils.js";
+const ethers = require("ethers");
 
 export default function SellNFT () {
     const [formParams, updateFormParams] = useState({ name: '', description: '', price: ''});
-    const [fileURL, setFileURL] = useState(null);
-    const ethers = require("ethers");
+    const [fileData, setFileData] = useState(null);
     const [message, updateMessage] = useState('');
+    const {address} = useAccount();
     const location = useLocation();
+
+
+    const {writeAsync,reset, data} = useContractWrite({
+        address: CONTRACT_ADDRESS,
+        abi:CONTRACT_ABI,
+        functionName:'createToken',
+        onError(err){
+            console.log(err)
+        }
+    })
+
+    const waitForTransaction  = useWaitForTransaction({
+        hash:data?.hash,
+        onSuccess(data){
+            console.log(data)
+            updateMessage("Successfully listed on marketPlace");
+            updateFormParams({ name: '', description: '', price: ''});
+            setFileData(null)
+        },
+        onError(err){
+            console.log(err)
+        }
+    })
+
+
+    function onFileUpload(e){
+        let file = e.target.files[0];
+        uploadFileToIPFS(file).then((result) => {
+            setFileData(result.pinataURL);
+        })
+    }
+
+    function uploadNft(e){
+        e.preventDefault();
+        let {name, description, price} = formParams;
+        writeAsync?.({
+            recklesslySetUnpreparedArgs:[fileData,parseEther(price),name,description],
+            recklesslySetUnpreparedOverrides: {
+                from: address,
+                value: ethers.utils.parseEther('0.01'),
+            },
+        });
+    }
+
+    useEffect(() => {
+      reset();
+      console.log("rendering");
+    }, [])
+    
 
     return (
         <div className="">
@@ -31,11 +84,11 @@ export default function SellNFT () {
                 </div>
                 <div>
                     <label className="block text-purple-500 text-sm font-bold mb-2" htmlFor="image">Upload Image</label>
-                    <input type={"file"} onChange={""}></input>
+                    <input type={"file"} onChange={(e)=>onFileUpload(e)}></input>
                 </div>
                 <br></br>
                 <div className="text-green text-center">{message}</div>
-                <button onClick={""} className="font-bold mt-10 w-full bg-purple-500 text-white rounded p-2 shadow-lg">
+                <button onClick={(e)=>uploadNft(e)} className="font-bold mt-10 w-full bg-purple-500 text-white rounded p-2 shadow-lg">
                     List NFT
                 </button>
             </form>

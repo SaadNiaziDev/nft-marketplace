@@ -1,5 +1,6 @@
 import logo from '../logo_3.png';
 import fullLogo from '../full_logo.png';
+import { Web3Button } from "@web3modal/react";
 import {
   BrowserRouter as Router,
   Switch,
@@ -10,12 +11,12 @@ import {
 } from "react-router-dom";
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router';
+import { useAccount } from 'wagmi';
 
 function Navbar() {
 
-const [connected, toggleConnect] = useState(false);
 const location = useLocation();
-const [currAddress, updateAddress] = useState('0x');
+const { address, isConnecting, isDisconnected } = useAccount()
 
     return (
       <div className="">
@@ -59,14 +60,14 @@ const [currAddress, updateAddress] = useState('0x');
               </li>              
               }  
               <li>
-                <button className="enableEthereumButton bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-sm">{connected? "Connected":"Connect Wallet"}</button>
+                <Web3Button icon='true' label="Connect"/>
               </li>
             </ul>
           </li>
           </ul>
         </nav>
         <div className='text-white text-bold text-right mr-10 text-sm'>
-          {currAddress !== "0x" ? "Connected to":"Not Connected. Please login to view NFTs"} {currAddress !== "0x" ? (currAddress.substring(0,15)+'...'):""}
+          {address? "":"Not Connected. Please login to view NFTs"} 
         </div>
       </div>
     );
