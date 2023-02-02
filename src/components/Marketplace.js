@@ -1,12 +1,11 @@
 import Navbar from "./Navbar";
 import NFTTile from "./NFTTile";
-import axios from "axios";
 import { useEffect, useState } from "react";
 
 export default function Marketplace({ contract }) {
 	const [data, updateData] = useState([]);
 
-	const getNftData = async (params) => {
+	const getNftData = async () => {
 		try {
 			const nfts = await contract.getAllNFTs();
 			updateData(nfts);
@@ -16,8 +15,10 @@ export default function Marketplace({ contract }) {
 	};
 
 	useEffect(() => {
-		getNftData();
-	}, []);
+		if (contract) {
+			getNftData();
+		}
+	}, [contract]);
 
 	return (
 		<div>

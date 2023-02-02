@@ -1,14 +1,35 @@
 import Navbar from "./Navbar";
-import { useLocation, useParams } from "react-router-dom";
-import MarketplaceJSON from "../Marketplace.json";
-import axios from "axios";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import NFTTile from "./NFTTile";
 
-export default function Profile() {
+export default function Profile({ contract, address }) {
 	const [data, updateData] = useState([]);
-	const [address, updateAddress] = useState("0x");
-	const [totalPrice, updateTotalPrice] = useState("0");
+
+	const getMyNFTs = async () => {
+		try {
+			const response = await contract.getOwnerNFTs();
+			updateData(response);
+			console.log(response);
+		} catch (error) {
+			console.log(error);
+		}
+	};
+
+	const generatePrice = () => {
+		if (data) {
+			let arr = data.map((item) => item.price);
+			let result = arr.reduce((acc, item) => Number(acc) + Number(item), 0);
+			return result / 10 ** 18;
+		} else {
+			return 0;
+		}
+	};
+
+	useEffect(() => {
+		if (contract && address) {
+			getMyNFTs();
+		}
+	}, [contract]);
 
 	return (
 		<div className='profileClass' style={{ "min-height": "100vh" }}>
@@ -23,22 +44,22 @@ export default function Profile() {
 				<div className='flex flex-row text-center justify-center mt-10 md:text-2xl text-white'>
 					<div>
 						<h2 className='font-bold'>No. of NFTs</h2>
-						{data.length}
+						{data?.length}
 					</div>
 					<div className='ml-20'>
 						<h2 className='font-bold'>Total Value</h2>
-						{totalPrice} ETH
+						{generatePrice()} ETH
 					</div>
 				</div>
 				<div className='flex flex-col text-center items-center mt-11 text-white'>
 					<h2 className='font-bold'>Your NFTs</h2>
 					<div className='flex justify-center flex-wrap max-w-screen-xl'>
-						{data.map((value, index) => {
+						{data?.map((value, index) => {
 							return <NFTTile data={value} key={index}></NFTTile>;
 						})}
 					</div>
 					<div className='mt-10 text-xl'>
-						{data.length == 0 ? "Oops, No NFT data to display (Are you logged in?)" : ""}
+						{data.length === 0 ? "Oops, No NFT data to display (Are you logged in?)" : ""}
 					</div>
 				</div>
 			</div>

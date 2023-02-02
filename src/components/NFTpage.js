@@ -1,8 +1,5 @@
 import Navbar from "./Navbar";
-import axie from "../tile.jpeg";
-import { useLocation, useParams } from "react-router-dom";
-import MarketplaceJSON from "../Marketplace.json";
-import axios from "axios";
+import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { parseEther } from "ethers/lib/utils.js";
 
@@ -16,7 +13,6 @@ export default function NFTPage({ contract, address }) {
 		try {
 			const metadata = await contract.getListedTokenForId(index);
 			updateData(metadata);
-			console.log(metadata);
 		} catch (error) {
 			console.log(error);
 		}
@@ -24,12 +20,16 @@ export default function NFTPage({ contract, address }) {
 
 	const buyNFT = async () => {
 		const price = data?.price / 10 ** 18;
+		updateMessage("Purchase in progress. Please wait!");
 		try {
 			const tx = await contract.executeSale(params.id, { value: parseEther(price.toString()) });
 			await tx.wait();
-			console.log(tx);
+			updateMessage("NFT has been purchased successfully!");
 		} catch (error) {
 			console.log(error);
+			updateMessage("Failed to purchase this NFT!");
+		} finally {
+			updateMessage("");
 		}
 	};
 
@@ -48,7 +48,7 @@ export default function NFTPage({ contract, address }) {
 					<div>Name: {data?.name}</div>
 					<div>Description: {data?.description}</div>
 					<div>
-						Price: <span className=''>{data?.price?.toString() / 10 ** 18 + " ETH"}</span>
+						Price: <span className=''>{(data?.price?.toString() / 10 ** 18 || 0) + " ETH"}</span>
 					</div>
 					<div>
 						Owner: <span className='text-sm'>{data?.ownedBy}</span>
@@ -58,7 +58,7 @@ export default function NFTPage({ contract, address }) {
 					</div>
 					{address && (
 						<div>
-							{address == data?.ownedBy || address == data?.soldBy ? (
+							{address === data?.ownedBy || address === data?.soldBy ? (
 								<div className='text-emerald-700'>You are the owner of this NFT</div>
 							) : (
 								<button
